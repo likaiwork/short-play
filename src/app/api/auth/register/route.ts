@@ -46,7 +46,8 @@ export async function POST(request: Request) {
       success: true,
       user: { id: user.id, email: user.email, name: user.name },
     })
-  } catch {
+  } catch (err) {
+    console.error("Register error:", err)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

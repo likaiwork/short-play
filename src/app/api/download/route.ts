@@ -34,6 +34,7 @@ async function extractVideoUrl(inputUrl: string, userId: string): Promise<{
 
     return { title, thumbnail, downloadUrl }
   } catch (err: unknown) {
+    console.error("Extract video error:", err)
     const message = err instanceof Error ? err.message : "Unknown error"
     return { title: null, thumbnail: null, downloadUrl: null, error: `Request failed: ${message}` }
   }
