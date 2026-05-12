@@ -48,3 +48,6 @@ next-env.d.ts
 .claude/
 .idea/
 node_modules/
+
+.vercel
+.env*.local
