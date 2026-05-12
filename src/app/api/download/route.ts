@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { requireAuth } from "@/lib/auth-helper"
+import { rateLimit } from "@/lib/rate-limit"
 
 async function extractVideoUrl(inputUrl: string, userId: string): Promise<{
   title: string | null
@@ -32,27 +33,33 @@ async function extractVideoUrl(inputUrl: string, userId: string): Promise<{
     }
 
     return { title, thumbnail, downloadUrl }
-  } catch (err: any) {
-    return { title: null, thumbnail: null, downloadUrl: null, error: `Request failed: ${err.message}` }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error"
+    return { title: null, thumbnail: null, downloadUrl: null, error: `Request failed: ${message}` }
   }
 }
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session?.user) {
-    return NextResponse.json({ error: "Please login first" }, { status: 401 })
-  }
+  const authResult = await requireAuth()
+  if (!authResult.ok) return authResult.response
 
   const { url } = await request.json()
   if (!url) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 })
   }
 
-  const result = await extractVideoUrl(url, session.user.id)
+  if (!rateLimit(`download:${authResult.userId}`, 10).ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 }
+    )
+  }
+
+  const result = await extractVideoUrl(url, authResult.userId)
 
   await prisma.downloadRecord.create({
     data: {
-      userId: session.user.id,
+      userId: authResult.userId,
       url,
       title: result.title,
       downloadUrl: result.downloadUrl,
@@ -73,13 +80,11 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  const session = await auth()
-  if (!session?.user) {
-    return NextResponse.json({ error: "Please login first" }, { status: 401 })
-  }
+  const authResult = await requireAuth()
+  if (!authResult.ok) return authResult.response
 
   const records = await prisma.downloadRecord.findMany({
-    where: { userId: session.user.id },
+    where: { userId: authResult.userId },
     orderBy: { createdAt: "desc" },
     take: 50,
   })

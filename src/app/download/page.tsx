@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import {
@@ -51,6 +51,16 @@ export default function DownloadPage() {
   const [downloading, setDownloading] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [thumbFailed, setThumbFailed] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort()
+        abortRef.current = null
+      }
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -79,8 +89,12 @@ export default function DownloadPage() {
     setDownloading(true)
     setDownloadProgress(0)
 
+    const controller = new AbortController()
+    abortRef.current = controller
+    let blobUrl: string | null = null
+
     try {
-      const res = await fetch(result.downloadUrl)
+      const res = await fetch(result.downloadUrl, { signal: controller.signal })
       if (!res.ok || !res.body) throw new Error("Download failed")
 
       const contentLength = Number(res.headers.get("content-length") || 0)
@@ -101,17 +115,20 @@ export default function DownloadPage() {
       }
 
       const blob = new Blob(chunks as BlobPart[], { type: "video/mp4" })
-      const blobUrl = URL.createObjectURL(blob)
+      blobUrl = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = blobUrl
       a.download = `${result.title || "video"}.mp4`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(blobUrl)
     } catch {
-      window.open(result.downloadUrl, "_blank")
+      if (!controller.signal.aborted) {
+        window.open(result.downloadUrl, "_blank")
+      }
     } finally {
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+      abortRef.current = null
       setDownloading(false)
       setDownloadProgress(0)
     }

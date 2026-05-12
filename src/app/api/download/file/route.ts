@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth-helper"
+import { isPublicUrl } from "@/lib/url-validator"
 
 export async function GET(request: Request) {
-  const session = await auth()
-  if (!session?.user) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
+  const authResult = await requireAuth()
+  if (!authResult.ok) return authResult.response
 
   const { searchParams } = new URL(request.url)
   const videoUrl = searchParams.get("url")
@@ -13,6 +12,13 @@ export async function GET(request: Request) {
 
   if (!videoUrl) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 })
+  }
+
+  if (!isPublicUrl(videoUrl)) {
+    return NextResponse.json(
+      { error: "Invalid or disallowed URL" },
+      { status: 400 }
+    )
   }
 
   try {
@@ -42,9 +48,8 @@ export async function GET(request: Request) {
         "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
       },
     })
-  } catch (err: any) {
-    // Surface the real cause
-    const detail = err.cause?.message || err.message || "Unknown error"
-    return NextResponse.json({ error: detail }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
