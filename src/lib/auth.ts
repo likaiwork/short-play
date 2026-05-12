@@ -37,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           isVip: user.isVip,
-          vipExpiresAt: user.vipExpiresAt,
+          vipExpiresAt: user.vipExpiresAt?.toISOString() ?? null,
         }
       },
     }),
@@ -47,7 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id
         token.isVip = user.isVip
-        token.vipExpiresAt = user.vipExpiresAt?.toISOString() ?? null
+        token.vipExpiresAt = user.vipExpiresAt ?? null
       }
       return token
     },
@@ -55,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string
         session.user.isVip = token.isVip as boolean
-        session.user.vipExpiresAt = token.vipExpiresAt as string | null
+        session.user.vipExpiresAt = token.vipExpiresAt as string | null | undefined
       }
       return session
     },

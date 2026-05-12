@@ -16,7 +16,7 @@ declare module "next-auth" {
     email: string
     name?: string | null
     isVip: boolean
-    vipExpiresAt?: Date | null
+    vipExpiresAt?: string | null
   }
 }
 
