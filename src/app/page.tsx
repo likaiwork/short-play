@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Lock,
   Sparkles,
+  Play,
 } from "lucide-react"
 
 const platforms = [
@@ -104,6 +105,8 @@ export default function Home() {
   const [downloading, setDownloading] = useState(false)
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [thumbFailed, setThumbFailed] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -294,23 +297,47 @@ export default function Home() {
         {/* Success */}
         {result?.success && result.downloadUrl && !loading && (
           <div className="relative bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden text-left mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="aspect-video bg-gray-100 flex items-center justify-center relative">
-              {result.thumbnail && !thumbFailed ? (
-                <img
-                  src={result.thumbnail}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={() => setThumbFailed(true)}
+            <div className="aspect-video bg-black flex items-center justify-center relative">
+              {playing ? (
+                <video
+                  ref={videoRef}
+                  src={result.downloadUrl}
+                  className="w-full h-full"
+                  controls
+                  autoPlay
+                  onError={() => setPlaying(false)}
                 />
               ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <Film className="w-16 h-16 text-gray-300" />
-                  <span className="text-sm text-gray-400">No preview available</span>
-                </div>
+                <>
+                  {result.thumbnail && !thumbFailed ? (
+                    <img
+                      src={result.thumbnail}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={() => setThumbFailed(true)}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <Film className="w-16 h-16 text-gray-400" />
+                      <span className="text-sm text-gray-400">No preview available</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      setPlaying(true)
+                      setTimeout(() => videoRef.current?.play(), 0)
+                    }}
+                    className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transition">
+                      <Play className="w-6 h-6 text-gray-900 ml-0.5" />
+                    </div>
+                  </button>
+                </>
               )}
 
               {sourceDomain && (
-                <span className="absolute top-3 left-3 bg-black/70 backdrop-blur text-gray-200 text-xs px-2.5 py-1 rounded-full border border-white/10">
+                <span className="absolute top-3 left-3 bg-black/70 backdrop-blur text-gray-200 text-xs px-2.5 py-1 rounded-full border border-white/10 z-10">
                   <Globe className="w-3 h-3 inline mr-1 opacity-50" />
                   {sourceDomain}
                 </span>
