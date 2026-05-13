@@ -106,6 +106,8 @@ export default function Home() {
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [thumbFailed, setThumbFailed] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const [playUrl, setPlayUrl] = useState<string | null>(null)
+  const [refreshingPlay, setRefreshingPlay] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -301,7 +303,7 @@ export default function Home() {
               {playing ? (
                 <video
                   ref={videoRef}
-                  src={`/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&inline=1`}
+                  src={`/api/download/file?url=${encodeURIComponent(playUrl || result.downloadUrl!)}&inline=1`}
                   className="w-full h-full"
                   controls
                   autoPlay
@@ -323,15 +325,39 @@ export default function Home() {
                     </div>
                   )}
                   <button
-                    onClick={() => {
-                      setPlaying(true)
-                      setTimeout(() => videoRef.current?.play(), 0)
+                    onClick={async () => {
+                      setRefreshingPlay(true)
+                      try {
+                        const res = await fetch("/api/download", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ url: url.trim() }),
+                        })
+                        const data = await res.json()
+                        if (data.success && data.downloadUrl) {
+                          setPlayUrl(data.downloadUrl)
+                          setPlaying(true)
+                        }
+                      } catch {
+                        // fallback: try current URL anyway
+                        setPlayUrl(result.downloadUrl!)
+                        setPlaying(true)
+                      } finally {
+                        setRefreshingPlay(false)
+                      }
                     }}
+                    disabled={refreshingPlay}
                     className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition group"
                   >
-                    <div className="w-14 h-14 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transition">
-                      <Play className="w-6 h-6 text-gray-900 ml-0.5" />
-                    </div>
+                    {refreshingPlay ? (
+                      <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                        <Loader2 className="w-6 h-6 text-gray-600 animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transition">
+                        <Play className="w-6 h-6 text-gray-900 ml-0.5" />
+                      </div>
+                    )}
                   </button>
                 </>
               )}

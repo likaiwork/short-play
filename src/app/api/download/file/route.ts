@@ -18,7 +18,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+
     const resp = await fetch(videoUrl, {
+      signal: controller.signal,
       redirect: "follow",
       headers: {
         "User-Agent":
@@ -29,10 +33,12 @@ export async function GET(request: Request) {
       },
     })
 
+    clearTimeout(timeout)
+
     if (!resp.ok) {
       return NextResponse.json(
         { error: `Remote server returned ${resp.status} ${resp.statusText}` },
-        { status: 500 }
+        { status: 502 }
       )
     }
 
@@ -41,6 +47,7 @@ export async function GET(request: Request) {
 
     const headers: Record<string, string> = {
       "Content-Type": contentType,
+      "Cache-Control": "public, max-age=3600",
     }
     if (!inline) {
       headers["Content-Disposition"] = `attachment; filename="${encodeURIComponent(filename)}"`
@@ -48,7 +55,8 @@ export async function GET(request: Request) {
 
     return new NextResponse(resp.body, { headers })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error"
+    const message = err instanceof Error ? (err.name === "AbortError" ? "Upstream timeout" : err.message) : "Unknown error"
+    console.error("Proxy fetch error:", message, videoUrl)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
