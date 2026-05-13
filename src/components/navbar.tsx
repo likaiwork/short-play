@@ -17,9 +17,9 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-6 text-base">
-          <Link href="/download" className="text-gray-700 hover:text-gray-900 transition">
+          <a href="/" className="text-gray-700 hover:text-gray-900 transition">
             Download
-          </Link>
+          </a>
         </div>
 
         {/* Mobile toggle */}
@@ -31,7 +31,7 @@ export function Navbar() {
       {/* Mobile nav */}
       {open && (
         <div className="md:hidden border-t border-gray-200 bg-white px-4 py-4 flex flex-col gap-3 text-base">
-          <Link href="/download" className="text-gray-700" onClick={() => setOpen(false)}>Download</Link>
+          <a href="/" className="text-gray-700" onClick={() => setOpen(false)}>Download</a>
         </div>
       )}
     </nav>
