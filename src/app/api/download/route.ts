@@ -12,7 +12,7 @@ async function extractVideoUrl(inputUrl: string): Promise<{
     const resp = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: inputUrl }),
+      body: JSON.stringify({ url: inputUrl, user_id: "123" }),
     })
 
     const data = await resp.json()
