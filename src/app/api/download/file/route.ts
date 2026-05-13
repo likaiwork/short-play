@@ -37,13 +37,16 @@ export async function GET(request: Request) {
     }
 
     const contentType = resp.headers.get("content-type") || "application/octet-stream"
+    const inline = searchParams.get("inline")
 
-    return new NextResponse(resp.body, {
-      headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
-      },
-    })
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+    }
+    if (!inline) {
+      headers["Content-Disposition"] = `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+
+    return new NextResponse(resp.body, { headers })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error"
     return NextResponse.json({ error: message }, { status: 500 })

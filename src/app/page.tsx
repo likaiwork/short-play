@@ -301,7 +301,7 @@ export default function Home() {
               {playing ? (
                 <video
                   ref={videoRef}
-                  src={result.downloadUrl}
+                  src={`/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&inline=1`}
                   className="w-full h-full"
                   controls
                   autoPlay
