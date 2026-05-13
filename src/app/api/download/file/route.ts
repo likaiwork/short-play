@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth-helper"
 import { isPublicUrl } from "@/lib/url-validator"
 
 export async function GET(request: Request) {
-  const authResult = await requireAuth()
-  if (!authResult.ok) return authResult.response
-
   const { searchParams } = new URL(request.url)
   const videoUrl = searchParams.get("url")
   const filename = searchParams.get("filename") || "video.mp4"

@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { requireAuth } from "@/lib/auth-helper"
-import { rateLimit } from "@/lib/rate-limit"
 
-async function extractVideoUrl(inputUrl: string, userId: string): Promise<{
+async function extractVideoUrl(inputUrl: string): Promise<{
   title: string | null
   thumbnail: string | null
   downloadUrl: string | null
@@ -15,7 +12,7 @@ async function extractVideoUrl(inputUrl: string, userId: string): Promise<{
     const resp = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: inputUrl, user_id: userId }),
+      body: JSON.stringify({ url: inputUrl }),
     })
 
     const data = await resp.json()
@@ -41,32 +38,12 @@ async function extractVideoUrl(inputUrl: string, userId: string): Promise<{
 }
 
 export async function POST(request: Request) {
-  const authResult = await requireAuth()
-  if (!authResult.ok) return authResult.response
-
   const { url } = await request.json()
   if (!url) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 })
   }
 
-  if (!rateLimit(`download:${authResult.userId}`, 10).ok) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    )
-  }
-
-  const result = await extractVideoUrl(url, authResult.userId)
-
-  await prisma.downloadRecord.create({
-    data: {
-      userId: authResult.userId,
-      url,
-      title: result.title,
-      downloadUrl: result.downloadUrl,
-      status: result.downloadUrl ? "completed" : "failed",
-    },
-  })
+  const result = await extractVideoUrl(url)
 
   if (result.error) {
     return NextResponse.json({ error: result.error }, { status: 400 })
@@ -78,17 +55,4 @@ export async function POST(request: Request) {
     thumbnail: result.thumbnail,
     downloadUrl: result.downloadUrl,
   })
-}
-
-export async function GET() {
-  const authResult = await requireAuth()
-  if (!authResult.ok) return authResult.response
-
-  const records = await prisma.downloadRecord.findMany({
-    where: { userId: authResult.userId },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  })
-
-  return NextResponse.json({ records })
 }
