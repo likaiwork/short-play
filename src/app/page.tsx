@@ -124,7 +124,7 @@ export default function Home() {
   // Capture first video frame as thumbnail when extractor didn't provide one
   useEffect(() => {
     if (!result?.success || !result.downloadUrl || result.thumbnail) return
-    if (capturedThumb || capturingThumb) return
+    if (capturedThumb || capturingThumb || thumbFailed) return
 
     setCapturingThumb(true)
 
