@@ -154,6 +154,7 @@ export default function Home() {
     const finish = () => {
       if (done) return
       done = true
+      video.src = ""
       video.remove()
       setCapturingThumb(false)
     }
