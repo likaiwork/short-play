@@ -18,6 +18,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    const referer = searchParams.get("referer") || new URL(videoUrl).origin
+
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15000)
 
@@ -29,7 +31,7 @@ export async function GET(request: Request) {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         Accept: "*/*",
         "Accept-Language": "en-US,en;q=0.9",
-        Referer: new URL(videoUrl).origin,
+        Referer: referer,
       },
     })
 

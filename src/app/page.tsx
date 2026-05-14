@@ -128,7 +128,8 @@ export default function Home() {
 
     setCapturingThumb(true)
 
-    const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&inline=1`
+    const origin = (() => { try { return new URL(url).origin } catch { return "" } })()
+    const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&inline=1&referer=${encodeURIComponent(origin)}`
     const video = document.createElement("video")
     video.muted = true
     video.playsInline = true
@@ -225,7 +226,8 @@ export default function Home() {
       }
 
       const filename = `${result.title || "video"}.mp4`
-      const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}`
+      const origin = (() => { try { return new URL(url).origin } catch { return "" } })()
+      const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}&referer=${encodeURIComponent(origin)}`
       const res = await fetch(proxyUrl, { signal: controller.signal })
       if (!res.ok || !res.body) throw new Error("Download failed")
 
@@ -377,7 +379,7 @@ export default function Home() {
               {playing ? (
                 <video
                   ref={videoRef}
-                  src={`/api/download/file?url=${encodeURIComponent(playUrl || result.downloadUrl!)}&inline=1`}
+                  src={`/api/download/file?url=${encodeURIComponent(playUrl || result.downloadUrl!)}&inline=1&referer=${encodeURIComponent((() => { try { return new URL(url).origin } catch { return "" } })())}`}
                   className="w-full h-full"
                   controls
                   autoPlay
