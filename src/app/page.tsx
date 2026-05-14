@@ -211,7 +211,11 @@ export default function Home() {
 
     const controller = new AbortController()
     abortRef.current = controller
-    const downloadTimeout = setTimeout(() => controller.abort(), 300000) // 5 min
+    let idleTimer = setTimeout(() => controller.abort(), 30000) // abort on 30s idle
+    const resetIdle = () => {
+      clearTimeout(idleTimer)
+      idleTimer = setTimeout(() => controller.abort(), 30000)
+    }
     let blobUrl: string | null = null
 
     try {
@@ -251,6 +255,7 @@ export default function Home() {
         if (value) {
           chunks.push(value)
           received += value.length
+          resetIdle()
           if (contentLength > 0) {
             setDownloadProgress(Math.round((received / contentLength) * 100))
           }
@@ -270,7 +275,7 @@ export default function Home() {
         alert("Download failed. Please try again or refresh the page.")
       }
     } finally {
-      clearTimeout(downloadTimeout)
+      clearTimeout(idleTimer)
       if (blobUrl) URL.revokeObjectURL(blobUrl)
       abortRef.current = null
       setDownloading(false)
