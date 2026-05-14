@@ -102,7 +102,6 @@ export default function Home() {
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(false)
   const [downloading, setDownloading] = useState(false)
-  const [downloadProgress, setDownloadProgress] = useState(0)
   const [thumbFailed, setThumbFailed] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [playUrl, setPlayUrl] = useState<string | null>(null)
@@ -111,16 +110,6 @@ export default function Home() {
   const [capturedThumb, setCapturedThumb] = useState<string | null>(null)
   const [capturingThumb, setCapturingThumb] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (abortRef.current) {
-        abortRef.current.abort()
-        abortRef.current = null
-      }
-    }
-  }, [])
 
   // Capture first video frame as thumbnail when extractor didn't provide one
   useEffect(() => {
@@ -207,16 +196,6 @@ export default function Home() {
   async function handleDownload() {
     if (!result?.downloadUrl) return
     setDownloading(true)
-    setDownloadProgress(0)
-
-    const controller = new AbortController()
-    abortRef.current = controller
-    let idleTimer = setTimeout(() => controller.abort(), 30000) // abort on 30s idle
-    const resetIdle = () => {
-      clearTimeout(idleTimer)
-      idleTimer = setTimeout(() => controller.abort(), 30000)
-    }
-    let blobUrl: string | null = null
 
     try {
       // Re-fetch to get a fresh CDN URL before downloading
@@ -226,60 +205,30 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: url.trim() }),
-          signal: controller.signal,
         })
         const freshData = await fresh.json()
         if (freshData.success && freshData.downloadUrl) {
           downloadUrl = freshData.downloadUrl
         }
       } catch {
-        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError")
         // use existing URL as fallback
       }
 
-      const filename = `${result.title || "video"}.mp4`
+      const filename = encodeURIComponent(`${result.title || "video"}.mp4`)
       const origin = (() => { try { return new URL(sourceUrl).origin } catch { return "" } })()
-      const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}&referer=${encodeURIComponent(origin)}`
-      const res = await fetch(proxyUrl, { signal: controller.signal })
-      if (!res.ok || !res.body) throw new Error("Download failed")
+      const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${filename}&referer=${encodeURIComponent(origin)}`
 
-      const contentLength = Number(res.headers.get("content-length") || 0)
-      const reader = res.body.getReader()
-      const chunks: Uint8Array[] = []
-      let received = 0
-
-      while (true) {
-        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError")
-        const { done, value } = await reader.read()
-        if (done) break
-        if (value) {
-          chunks.push(value)
-          received += value.length
-          resetIdle()
-          if (contentLength > 0) {
-            setDownloadProgress(Math.round((received / contentLength) * 100))
-          }
-        }
-      }
-
-      const blob = new Blob(chunks as BlobPart[], { type: "video/mp4" })
-      blobUrl = URL.createObjectURL(blob)
+      // Use an anchor to trigger browser-native download without loading into memory
       const a = document.createElement("a")
-      a.href = blobUrl
-      a.download = `${result.title || "video"}.mp4`
+      a.href = proxyUrl
+      a.download = ""
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
     } catch {
-      if (!controller.signal.aborted) {
-        alert("Download failed. Please try again or refresh the page.")
-      }
+      alert("Download failed. Please try again or refresh the page.")
     } finally {
-      clearTimeout(idleTimer)
-      if (blobUrl) URL.revokeObjectURL(blobUrl)
-      abortRef.current = null
       setDownloading(false)
-      setDownloadProgress(0)
     }
   }
 
@@ -501,27 +450,19 @@ export default function Home() {
               <button
                 onClick={handleDownload}
                 disabled={downloading}
-                className="w-full relative overflow-hidden bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-700 text-white py-3 rounded-xl font-medium text-base flex items-center justify-center gap-2 transition"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-700 text-white py-3 rounded-xl font-medium text-base flex items-center justify-center gap-2 transition"
               >
-                {downloading && (
-                  <span
-                    className="absolute inset-0 bg-emerald-500 transition-all duration-300"
-                    style={{ width: `${downloadProgress}%` }}
-                  />
+                {downloading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Download MP4
+                  </>
                 )}
-                <span className="relative z-10 flex items-center gap-2">
-                  {downloading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Downloading... {downloadProgress > 0 && `${downloadProgress}%`}
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      Download MP4
-                    </>
-                  )}
-                </span>
               </button>
             </div>
           </div>
