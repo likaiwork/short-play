@@ -211,6 +211,7 @@ export default function Home() {
 
     const controller = new AbortController()
     abortRef.current = controller
+    const downloadTimeout = setTimeout(() => controller.abort(), 300000) // 5 min
     let blobUrl: string | null = null
 
     try {
@@ -221,12 +222,14 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: url.trim() }),
+          signal: controller.signal,
         })
         const freshData = await fresh.json()
         if (freshData.success && freshData.downloadUrl) {
           downloadUrl = freshData.downloadUrl
         }
       } catch {
+        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError")
         // use existing URL as fallback
       }
 
@@ -242,6 +245,7 @@ export default function Home() {
       let received = 0
 
       while (true) {
+        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError")
         const { done, value } = await reader.read()
         if (done) break
         if (value) {
@@ -266,6 +270,7 @@ export default function Home() {
         alert("Download failed. Please try again or refresh the page.")
       }
     } finally {
+      clearTimeout(downloadTimeout)
       if (blobUrl) URL.revokeObjectURL(blobUrl)
       abortRef.current = null
       setDownloading(false)
