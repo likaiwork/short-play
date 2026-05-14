@@ -148,13 +148,13 @@ export default function Home() {
     const video = document.createElement("video")
     video.muted = true
     video.playsInline = true
+    video.preload = "metadata"
     video.src = proxyUrl
 
     let done = false
     const finish = () => {
       if (done) return
       done = true
-      video.src = ""
       video.remove()
       setCapturingThumb(false)
     }
