@@ -108,6 +108,8 @@ export default function Home() {
   const [playing, setPlaying] = useState(false)
   const [playUrl, setPlayUrl] = useState<string | null>(null)
   const [refreshingPlay, setRefreshingPlay] = useState(false)
+  const [capturedThumb, setCapturedThumb] = useState<string | null>(null)
+  const [capturingThumb, setCapturingThumb] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -120,12 +122,67 @@ export default function Home() {
     }
   }, [])
 
+  // Capture first video frame as thumbnail when extractor didn't provide one
+  useEffect(() => {
+    if (!result?.success || !result.downloadUrl || result.thumbnail) return
+    if (capturedThumb || capturingThumb) return
+
+    setCapturingThumb(true)
+
+    const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&inline=1`
+    const video = document.createElement("video")
+    video.muted = true
+    video.playsInline = true
+    video.src = proxyUrl
+
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      video.remove()
+      setCapturingThumb(false)
+    }
+
+    video.onloadedmetadata = () => {
+      video.currentTime = Math.min(0.1, video.duration || 0.1)
+    }
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement("canvas")
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          setCapturedThumb(canvas.toDataURL("image/jpeg", 0.8))
+        }
+      } catch {
+        setThumbFailed(true)
+      }
+      finish()
+    }
+
+    video.onerror = () => {
+      setThumbFailed(true)
+      finish()
+    }
+
+    const timeout = setTimeout(finish, 15000)
+
+    return () => {
+      clearTimeout(timeout)
+      finish()
+    }
+  }, [result?.success, result?.downloadUrl, result?.thumbnail, capturedThumb, capturingThumb])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!url.trim()) return
     setLoading(true)
     setResult(null)
     setThumbFailed(false)
+    setCapturedThumb(null)
 
     try {
       const res = await fetch("/api/download", {
@@ -336,6 +393,17 @@ export default function Home() {
                       className="w-full h-full object-cover"
                       onError={() => setThumbFailed(true)}
                     />
+                  ) : capturedThumb ? (
+                    <img
+                      src={capturedThumb}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : capturingThumb ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                      <span className="text-sm text-gray-400">Generating preview...</span>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3">
                       <Film className="w-16 h-16 text-gray-400" />
