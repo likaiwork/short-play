@@ -26,6 +26,7 @@ const platforms = [
   { icon: Film, label: "Facebook" },
   { icon: Film, label: "Dailymotion" },
   { icon: Tv, label: "Kuaishou" },
+  { icon: Tv, label: "Douyin" },
 ]
 
 const steps = [
@@ -89,6 +90,7 @@ function guessPlatform(url: string): string | null {
     if (host.includes("facebook")) return "Facebook"
     if (host.includes("dailymotion")) return "Dailymotion"
     if (host.includes("kuaishou")) return "Kuaishou"
+    if (host.includes("douyin")) return "Douyin"
     return null
   } catch {
     return null
