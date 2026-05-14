@@ -380,6 +380,7 @@ export default function Home() {
             <div className="aspect-video bg-black flex items-center justify-center relative">
               {playing ? (
                 <video
+                  key={playUrl || result.downloadUrl}
                   ref={videoRef}
                   src={`/api/download/file?url=${encodeURIComponent(playUrl || result.downloadUrl!)}&inline=1&referer=${encodeURIComponent((() => { try { return new URL(url).origin } catch { return "" } })())}`}
                   className="w-full h-full"
