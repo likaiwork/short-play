@@ -152,8 +152,24 @@ export default function Home() {
     let blobUrl: string | null = null
 
     try {
+      // Re-fetch to get a fresh CDN URL before downloading
+      let downloadUrl = result.downloadUrl
+      try {
+        const fresh = await fetch("/api/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim() }),
+        })
+        const freshData = await fresh.json()
+        if (freshData.success && freshData.downloadUrl) {
+          downloadUrl = freshData.downloadUrl
+        }
+      } catch {
+        // use existing URL as fallback
+      }
+
       const filename = `${result.title || "video"}.mp4`
-      const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&filename=${encodeURIComponent(filename)}`
+      const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}`
       const res = await fetch(proxyUrl, { signal: controller.signal })
       if (!res.ok || !res.body) throw new Error("Download failed")
 
@@ -184,7 +200,7 @@ export default function Home() {
       document.body.removeChild(a)
     } catch {
       if (!controller.signal.aborted) {
-        window.open(result.downloadUrl, "_blank")
+        alert("Download failed. Please try again or refresh the page.")
       }
     } finally {
       if (blobUrl) URL.revokeObjectURL(blobUrl)
