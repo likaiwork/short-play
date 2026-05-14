@@ -152,7 +152,9 @@ export default function Home() {
     let blobUrl: string | null = null
 
     try {
-      const res = await fetch(result.downloadUrl, { signal: controller.signal })
+      const filename = `${result.title || "video"}.mp4`
+      const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&filename=${encodeURIComponent(filename)}`
+      const res = await fetch(proxyUrl, { signal: controller.signal })
       if (!res.ok || !res.body) throw new Error("Download failed")
 
       const contentLength = Number(res.headers.get("content-length") || 0)
