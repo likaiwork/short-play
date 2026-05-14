@@ -198,27 +198,10 @@ export default function Home() {
     setDownloading(true)
 
     try {
-      // Re-fetch to get a fresh CDN URL before downloading
-      let downloadUrl = result.downloadUrl
-      try {
-        const fresh = await fetch("/api/download", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: url.trim() }),
-        })
-        const freshData = await fresh.json()
-        if (freshData.success && freshData.downloadUrl) {
-          downloadUrl = freshData.downloadUrl
-        }
-      } catch {
-        // use existing URL as fallback
-      }
-
       const filename = encodeURIComponent(`${result.title || "video"}.mp4`)
       const origin = (() => { try { return new URL(sourceUrl).origin } catch { return "" } })()
-      const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${filename}&referer=${encodeURIComponent(origin)}`
+      const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&filename=${filename}&referer=${encodeURIComponent(origin)}`
 
-      // Use an anchor to trigger browser-native download without loading into memory
       const a = document.createElement("a")
       a.href = proxyUrl
       a.download = ""
