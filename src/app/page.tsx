@@ -183,6 +183,8 @@ export default function Home() {
     setResult(null)
     setThumbFailed(false)
     setCapturedThumb(null)
+    setPlaying(false)
+    setPlayUrl(null)
 
     try {
       const res = await fetch("/api/download", {
