@@ -307,11 +307,12 @@ export default function Home() {
             <div className="flex-1 relative flex items-center">
               <LinkIcon className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
-                type="url"
+                type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Paste video link here..."
                 className="w-full bg-transparent pl-10 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none text-base"
+                autoComplete="off"
                 required
               />
             </div>
