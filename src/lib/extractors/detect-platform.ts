@@ -3,6 +3,8 @@ import type { Platform } from "./types"
 const PLATFORM_PATTERNS: Array<{ hostPattern: RegExp; platform: Platform }> = [
   { hostPattern: /(^|\.)instagram\.com$/i, platform: "instagram" },
   { hostPattern: /(^|\.)(x\.com|twitter\.com)$/i, platform: "twitter" },
+  { hostPattern: /(^|\.)facebook\.com$/i, platform: "facebook" },
+  { hostPattern: /(^|\.)dailymotion\.com$/i, platform: "dailymotion" },
 ]
 
 export function detectPlatform(urlString: string): Platform | null {

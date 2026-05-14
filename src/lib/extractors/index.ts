@@ -1,9 +1,11 @@
 import { register } from "./registry"
 import { instagramExtractor } from "./instagram"
-import { twitterExtractor } from "./twitter"
+import { twitterExtractor, facebookExtractor, dailymotionExtractor } from "./media-api"
 
 register(instagramExtractor)
 register(twitterExtractor)
+register(facebookExtractor)
+register(dailymotionExtractor)
 
 export { detectPlatform } from "./detect-platform"
 export { find as findExtractor } from "./registry"
