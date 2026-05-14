@@ -1,51 +1,47 @@
 import { NextResponse } from "next/server"
-
-async function extractVideoUrl(inputUrl: string): Promise<{
-  title: string | null
-  thumbnail: string | null
-  downloadUrl: string | null
-  error?: string
-}> {
-  try {
-    const apiUrl = "https://tools.lrtxs.com/Tools/VideoDownload/videoinfo"
-
-    const resp = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: inputUrl, user_id: "123" }),
-    })
-
-    const data = await resp.json()
-
-    if (data.code !== 200) {
-      return { title: null, thumbnail: null, downloadUrl: null, error: data.msg || `API error code ${data.code}` }
-    }
-
-    const title = data?.data?.title || null
-    const thumbnail = data?.data?.thumbnail || null
-    const downloadUrl = data?.data?.url || null
-
-    if (!downloadUrl) {
-      return { title, thumbnail, downloadUrl: null, error: "No download URL in API response" }
-    }
-
-    return { title, thumbnail, downloadUrl }
-  } catch (err: unknown) {
-    console.error("Extract video error:", err)
-    const message = err instanceof Error ? err.message : "Unknown error"
-    return { title: null, thumbnail: null, downloadUrl: null, error: `Request failed: ${message}` }
-  }
-}
+import { isPublicUrl } from "@/lib/url-validator"
+import { detectPlatform, findExtractor } from "@/lib/extractors"
 
 export async function POST(request: Request) {
-  const { url } = await request.json()
+  let url: string
+  try {
+    const body = await request.json()
+    url = body.url?.trim()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+  }
+
   if (!url) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 })
   }
 
-  const result = await extractVideoUrl(url)
+  if (!isPublicUrl(url)) {
+    return NextResponse.json(
+      { error: "Invalid or unsupported URL. Please provide a video link from a supported platform." },
+      { status: 400 }
+    )
+  }
+
+  const platform = detectPlatform(url)
+  if (!platform) {
+    return NextResponse.json(
+      { error: "This platform is not supported yet. Currently supported: Instagram, X (Twitter)." },
+      { status: 400 }
+    )
+  }
+
+  const extractor = findExtractor(platform)
+  if (!extractor) {
+    return NextResponse.json(
+      { error: `"${platform}" is recognized but extraction is not yet implemented.` },
+      { status: 400 }
+    )
+  }
+
+  const result = await extractor.extract(url)
 
   if (result.error) {
+    console.warn(`Extraction failed for ${platform} (${url}): ${result.error}`)
     return NextResponse.json({ error: result.error }, { status: 400 })
   }
 
