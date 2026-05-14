@@ -106,6 +106,7 @@ export default function Home() {
   const [thumbFailed, setThumbFailed] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [playUrl, setPlayUrl] = useState<string | null>(null)
+  const [sourceUrl, setSourceUrl] = useState("")
   const [refreshingPlay, setRefreshingPlay] = useState(false)
   const [capturedThumb, setCapturedThumb] = useState<string | null>(null)
   const [capturingThumb, setCapturingThumb] = useState(false)
@@ -128,7 +129,7 @@ export default function Home() {
 
     setCapturingThumb(true)
 
-    const origin = (() => { try { return new URL(url).origin } catch { return "" } })()
+    const origin = (() => { try { return new URL(sourceUrl).origin } catch { return "" } })()
     const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&inline=1&referer=${encodeURIComponent(origin)}`
     const video = document.createElement("video")
     video.muted = true
@@ -185,6 +186,7 @@ export default function Home() {
     setCapturedThumb(null)
     setPlaying(false)
     setPlayUrl(null)
+    setSourceUrl("")
 
     try {
       const res = await fetch("/api/download", {
@@ -194,6 +196,7 @@ export default function Home() {
       })
       const data = await res.json()
       setResult(data)
+      if (data?.success) setSourceUrl(url.trim())
     } catch {
       setResult({ error: "Network error. Please check your connection and try again." })
     } finally {
@@ -228,7 +231,7 @@ export default function Home() {
       }
 
       const filename = `${result.title || "video"}.mp4`
-      const origin = (() => { try { return new URL(url).origin } catch { return "" } })()
+      const origin = (() => { try { return new URL(sourceUrl).origin } catch { return "" } })()
       const proxyUrl = `/api/download/file?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}&referer=${encodeURIComponent(origin)}`
       const res = await fetch(proxyUrl, { signal: controller.signal })
       if (!res.ok || !res.body) throw new Error("Download failed")
@@ -383,7 +386,7 @@ export default function Home() {
                 <video
                   key={playUrl || result.downloadUrl}
                   ref={videoRef}
-                  src={`/api/download/file?url=${encodeURIComponent(playUrl || result.downloadUrl!)}&inline=1&referer=${encodeURIComponent((() => { try { return new URL(url).origin } catch { return "" } })())}`}
+                  src={`/api/download/file?url=${encodeURIComponent(playUrl || result.downloadUrl!)}&inline=1&referer=${encodeURIComponent((() => { try { return new URL(sourceUrl).origin } catch { return "" } })())}`}
                   className="w-full h-full"
                   controls
                   autoPlay
