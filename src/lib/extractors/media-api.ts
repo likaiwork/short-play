@@ -60,8 +60,3 @@ export const facebookExtractor: Extractor = {
   platform: "facebook",
   extract: extractViaMediaApi,
 }
-
-export const dailymotionExtractor: Extractor = {
-  platform: "dailymotion",
-  extract: extractViaMediaApi,
-}

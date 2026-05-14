@@ -1,13 +1,12 @@
 import { register } from "./registry"
 import { instagramExtractor } from "./instagram"
-import { twitterExtractor, facebookExtractor, dailymotionExtractor } from "./media-api"
+import { twitterExtractor, facebookExtractor } from "./media-api"
 import { kuaishouExtractor } from "./kuaishou"
 import { douyinExtractor } from "./douyin"
 
 register(instagramExtractor)
 register(twitterExtractor)
 register(facebookExtractor)
-register(dailymotionExtractor)
 register(kuaishouExtractor)
 register(douyinExtractor)
 

@@ -4,7 +4,6 @@ const PLATFORM_PATTERNS: Array<{ hostPattern: RegExp; platform: Platform }> = [
   { hostPattern: /(^|\.)instagram\.com$/i, platform: "instagram" },
   { hostPattern: /(^|\.)(x\.com|twitter\.com)$/i, platform: "twitter" },
   { hostPattern: /(^|\.)facebook\.com$/i, platform: "facebook" },
-  { hostPattern: /(^|\.)dailymotion\.com$/i, platform: "dailymotion" },
   { hostPattern: /(^|\.)(kuaishou\.com|kuaishou\.cn)$/i, platform: "kuaishou" },
   { hostPattern: /(^|\.)douyin\.com$/i, platform: "douyin" },
 ]
