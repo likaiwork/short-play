@@ -97,6 +97,12 @@ function guessPlatform(url: string): string | null {
   }
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
 export default function Home() {
   const [url, setUrl] = useState("")
   const [result, setResult] = useState<Result | null>(null)
@@ -109,7 +115,26 @@ export default function Home() {
   const [refreshingPlay, setRefreshingPlay] = useState(false)
   const [capturedThumb, setCapturedThumb] = useState<string | null>(null)
   const [capturingThumb, setCapturingThumb] = useState(false)
+  const [fileSize, setFileSize] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  // Fetch file size via HEAD when download URL is available
+  useEffect(() => {
+    if (!result?.downloadUrl) return
+    setFileSize(null)
+
+    const origin = (() => { try { return new URL(sourceUrl).origin } catch { return "" } })()
+    const proxyUrl = `/api/download/file?url=${encodeURIComponent(result.downloadUrl)}&referer=${encodeURIComponent(origin)}`
+
+    fetch(proxyUrl, { method: "HEAD" })
+      .then((r) => {
+        if (r.ok) {
+          const len = r.headers.get("content-length")
+          if (len) setFileSize(formatBytes(Number(len)))
+        }
+      })
+      .catch(() => {})
+  }, [result?.downloadUrl, sourceUrl])
 
   // Capture first video frame as thumbnail when extractor didn't provide one
   useEffect(() => {
@@ -176,6 +201,7 @@ export default function Home() {
     setPlaying(false)
     setPlayUrl(null)
     setSourceUrl("")
+    setFileSize(null)
 
     try {
       const res = await fetch("/api/download", {
@@ -444,6 +470,7 @@ export default function Home() {
                   <>
                     <Download className="w-4 h-4" />
                     Download MP4
+                    {fileSize && <span className="opacity-60 text-sm ml-1">({fileSize})</span>}
                   </>
                 )}
               </button>

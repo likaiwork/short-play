@@ -32,7 +32,7 @@ async function fetchWithReferers(videoUrl: string, referers: string[], signal: A
   throw lastError || new Error("All referer attempts failed")
 }
 
-export async function GET(request: Request) {
+async function handleRequest(request: Request, headOnly: boolean) {
   const { searchParams } = new URL(request.url)
   const videoUrl = searchParams.get("url")
   const filename = searchParams.get("filename") || "video.mp4"
@@ -49,7 +49,6 @@ export async function GET(request: Request) {
     const customReferer = searchParams.get("referer")
     const cdnOrigin = new URL(videoUrl).origin
 
-    // Try custom referer first, fall back to CDN origin
     const referers = customReferer
       ? [customReferer, cdnOrigin]
       : [cdnOrigin]
@@ -62,17 +61,21 @@ export async function GET(request: Request) {
     clearTimeout(timeout)
 
     const contentType = resp.headers.get("content-type") || "application/octet-stream"
+    const contentLength = resp.headers.get("content-length")
     const inline = searchParams.get("inline")
 
     const headers: Record<string, string> = {
       "Content-Type": contentType,
       "Cache-Control": "public, max-age=3600",
     }
+    if (contentLength) {
+      headers["Content-Length"] = contentLength
+    }
     if (!inline) {
       headers["Content-Disposition"] = `attachment; filename="${encodeURIComponent(filename)}"`
     }
 
-    return new NextResponse(resp.body, { headers })
+    return new NextResponse(headOnly ? null : resp.body, { headers })
   } catch (err: unknown) {
     const message =
       err instanceof Error
@@ -83,4 +86,12 @@ export async function GET(request: Request) {
     console.error("Proxy fetch error:", message, videoUrl)
     return NextResponse.json({ error: message }, { status: 502 })
   }
+}
+
+export async function GET(request: Request) {
+  return handleRequest(request, false)
+}
+
+export async function HEAD(request: Request) {
+  return handleRequest(request, true)
 }
