@@ -5,6 +5,7 @@ const PLATFORM_PATTERNS: Array<{ hostPattern: RegExp; platform: Platform }> = [
   { hostPattern: /(^|\.)(x\.com|twitter\.com)$/i, platform: "twitter" },
   { hostPattern: /(^|\.)facebook\.com$/i, platform: "facebook" },
   { hostPattern: /(^|\.)dailymotion\.com$/i, platform: "dailymotion" },
+  { hostPattern: /(^|\.)(kuaishou\.com|kuaishou\.cn)$/i, platform: "kuaishou" },
 ]
 
 export function detectPlatform(urlString: string): Platform | null {

@@ -1,4 +1,4 @@
-export type Platform = "instagram" | "twitter" | "facebook" | "dailymotion"
+export type Platform = "instagram" | "twitter" | "facebook" | "dailymotion" | "kuaishou"
 
 export interface ExtractResult {
   title: string | null

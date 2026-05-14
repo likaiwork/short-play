@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const platform = detectPlatform(url)
   if (!platform) {
     return NextResponse.json(
-      { error: "This platform is not supported yet. Currently supported: Instagram, X (Twitter), Facebook, Dailymotion." },
+      { error: "This platform is not supported yet. Currently supported: Instagram, X (Twitter), Facebook, Dailymotion, Kuaishou." },
       { status: 400 }
     )
   }
