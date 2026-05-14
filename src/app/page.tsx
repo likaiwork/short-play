@@ -13,7 +13,6 @@ import {
   Globe,
   Clock,
   Zap,
-  Music2,
   Tv,
   TrendingUp,
   Lock,
@@ -22,12 +21,11 @@ import {
 } from "lucide-react"
 
 const platforms = [
-  { icon: Tv, label: "YouTube" },
-  { icon: Music2, label: "TikTok" },
-  { icon: Film, label: "Bilibili" },
   { icon: Globe, label: "Instagram" },
   { icon: Globe, label: "X (Twitter)" },
   { icon: Film, label: "Facebook" },
+  { icon: Film, label: "Dailymotion" },
+  { icon: Tv, label: "Kuaishou" },
 ]
 
 const steps = [
@@ -86,12 +84,11 @@ interface Result {
 function guessPlatform(url: string): string | null {
   try {
     const host = new URL(url).hostname.replace("www.", "")
-    if (host.includes("youtube") || host.includes("youtu.be")) return "YouTube"
-    if (host.includes("tiktok")) return "TikTok"
-    if (host.includes("bilibili")) return "Bilibili"
     if (host.includes("instagram")) return "Instagram"
-    if (host.includes("facebook")) return "Facebook"
     if (host.includes("x.com") || host.includes("twitter")) return "X (Twitter)"
+    if (host.includes("facebook")) return "Facebook"
+    if (host.includes("dailymotion")) return "Dailymotion"
+    if (host.includes("kuaishou")) return "Kuaishou"
     return null
   } catch {
     return null
